@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#ff8ab6" />
+    <title>Cat Fight</title>
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" href="./assets/icon-192.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="hud">
+        <h1>🐾 Cat Fight</h1>
+        <p class="tagline">Kid-friendly, silly, and all about fluffy fun.</p>
+        <div class="hud-row">
+          <div id="p1Stamina" class="meter">P1 Stamina: 100</div>
+          <div id="timer" class="meter">Time: 60</div>
+          <div id="p2Stamina" class="meter">P2 Stamina: 100</div>
+        </div>
+      </header>
+
+      <section class="game-wrap">
+        <canvas id="gameCanvas" width="960" height="540" aria-label="Cat Fight Game"></canvas>
+        <div id="announcement" class="announcement" aria-live="polite"></div>
+      </section>
+
+      <section class="controls">
+        <div class="controls-col">
+          <h2>Player 1 (Orange Cat)</h2>
+          <p>Keyboard: A/D move, W jump, F paw bop, G yarn toss</p>
+          <div class="touch-grid">
+            <button data-key="KeyA">⬅️</button>
+            <button data-key="KeyD">➡️</button>
+            <button data-key="KeyW">⬆️</button>
+            <button data-key="KeyF">Paw Bop</button>
+            <button data-key="KeyG">Yarn Toss</button>
+          </div>
+        </div>
+
+        <div class="controls-col">
+          <h2>Player 2 (Gray Cat)</h2>
+          <p>Keyboard: ←/→ move, ↑ jump, K paw bop, L yarn toss</p>
+          <div class="touch-grid">
+            <button data-key="ArrowLeft">⬅️</button>
+            <button data-key="ArrowRight">➡️</button>
+            <button data-key="ArrowUp">⬆️</button>
+            <button data-key="KeyK">Paw Bop</button>
+            <button data-key="KeyL">Yarn Toss</button>
+          </div>
+        </div>
+      </section>
+
+      <footer>
+        <button id="resetButton">Start New Round</button>
+      </footer>
+    </main>
+
+    <script src="./src/game.js" defer></script>
+  </body>
+</html>
