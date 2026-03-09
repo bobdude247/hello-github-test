@@ -2,7 +2,7 @@
 
 This repository now includes a new no-cost, local-first game project in [`cat-fight/`](cat-fight).
 
-`Cat Fight` is a playful, kid-friendly, humane-society-friendly **player-vs-player** cat game inspired by arcade fighters.
+`Cat Fight` is a playful, humane-society-friendly **player-vs-player** cat game inspired by arcade fighters.
 
 ## Why this stack
 
