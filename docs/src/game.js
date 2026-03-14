@@ -455,7 +455,7 @@ function renderCatOptions() {
 }
 
 async function startCountdown() {
-  const beats = ["3", "2", "1", "Fight! 🐾"];
+  const beats = ["Ready?!", "3", "2", "1", "Play!"];
   for (const beat of beats) {
     announce(beat, 55);
     await new Promise((resolve) => {
