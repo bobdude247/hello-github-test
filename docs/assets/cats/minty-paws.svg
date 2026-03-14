@@ -6,5 +6,6 @@
   <circle cx="38" cy="52" r="3" fill="#222"/>
   <circle cx="58" cy="52" r="3" fill="#222"/>
   <circle cx="48" cy="60" r="3" fill="#ff89ad"/>
-  <path d="M36 68c4-6 20-6 24 0" stroke="#63b59d" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M43 66c2 2 8 2 10 0" stroke="#4f947f" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <ellipse cx="54.5" cy="68.4" rx="2.3" ry="3.1" fill="#ff6f94"/>
 </svg>
