@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+  <rect width="192" height="192" rx="36" fill="#ffe5f0"/>
+  <circle cx="96" cy="102" r="54" fill="#ffb347"/>
+  <polygon points="58,67 72,37 84,71" fill="#ffb347"/>
+  <polygon points="108,71 120,37 134,67" fill="#ffb347"/>
+  <circle cx="79" cy="98" r="5" fill="#222"/>
+  <circle cx="113" cy="98" r="5" fill="#222"/>
+  <circle cx="96" cy="112" r="6" fill="#ff89ad"/>
+  <text x="96" y="170" text-anchor="middle" font-size="20" font-family="Trebuchet MS, Arial" fill="#ff3f8f">CAT FIGHT</text>
+</svg>

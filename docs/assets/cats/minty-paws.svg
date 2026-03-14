@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="Minty Paws">
+  <rect width="96" height="96" rx="14" fill="#f2fff9"/>
+  <circle cx="48" cy="52" r="28" fill="#8fd3bf"/>
+  <path d="M30 32l8-14 8 16" fill="#8fd3bf"/>
+  <path d="M66 32l-8-14-8 16" fill="#8fd3bf"/>
+  <circle cx="38" cy="52" r="3" fill="#222"/>
+  <circle cx="58" cy="52" r="3" fill="#222"/>
+  <circle cx="48" cy="60" r="3" fill="#ff89ad"/>
+  <path d="M36 68c4-6 20-6 24 0" stroke="#63b59d" stroke-width="3" fill="none" stroke-linecap="round"/>
+</svg>
