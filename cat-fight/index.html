@@ -19,41 +19,70 @@
           <div id="timer" class="meter">Time: 60</div>
           <div id="p2Stamina" class="meter">P2 Stamina: 100</div>
         </div>
+        <div class="hud-row hud-row-secondary">
+          <div id="matchStatus" class="meter meter-wide">Match: Select cats to begin</div>
+        </div>
       </header>
 
-      <section class="game-wrap">
+      <section id="selectScreen" class="select-screen">
+        <h2>Character Select</h2>
+        <p class="select-help">Single-grid ordered picks: first click selects Player 1, second click selects Player 2. Same character is allowed.</p>
+
+        <div class="match-length" role="group" aria-label="Match Length">
+          <span>Match Length:</span>
+          <label>
+            <input type="radio" name="matchLength" value="1" checked />
+            1 Round
+          </label>
+          <label>
+            <input type="radio" name="matchLength" value="3" />
+            Best of 3
+          </label>
+        </div>
+
+        <div class="select-single-box">
+          <p id="pickOrder" class="pick-order">Pick order: Player 1 turn</p>
+          <p id="p1Selected" class="selected-name">Player 1: Not selected</p>
+          <p id="p2Selected" class="selected-name">Player 2: Not selected</p>
+          <div id="catGrid" class="cat-grid cat-grid-single"></div>
+        </div>
+      </section>
+
+      <section id="fightScreen" class="game-wrap hidden">
         <canvas id="gameCanvas" width="960" height="540" aria-label="Cat Fight Game"></canvas>
         <div id="announcement" class="announcement" aria-live="polite"></div>
       </section>
 
-      <section class="controls">
+      <section id="controls" class="controls hidden">
         <div class="controls-col">
-          <h2>Player 1 (Orange Cat)</h2>
-          <p>Keyboard: A/D move, W jump, F paw bop, G yarn toss</p>
+          <h2>Player 1 Controls</h2>
+          <p>Keyboard: A/D move, W jump, F paw bop, G yarn toss, H hind legs, hold away to block</p>
           <div class="touch-grid">
             <button data-key="KeyA">⬅️</button>
             <button data-key="KeyD">➡️</button>
             <button data-key="KeyW">⬆️</button>
             <button data-key="KeyF">Paw Bop</button>
             <button data-key="KeyG">Yarn Toss</button>
+            <button data-key="KeyH">Hind Legs</button>
           </div>
         </div>
 
         <div class="controls-col">
-          <h2>Player 2 (Gray Cat)</h2>
-          <p>Keyboard: ←/→ move, ↑ jump, K paw bop, L yarn toss</p>
+          <h2>Player 2 Controls</h2>
+          <p>Keyboard: ←/→ move, ↑ jump, K paw bop, L yarn toss, J hind legs, hold away to block</p>
           <div class="touch-grid">
             <button data-key="ArrowLeft">⬅️</button>
             <button data-key="ArrowRight">➡️</button>
             <button data-key="ArrowUp">⬆️</button>
             <button data-key="KeyK">Paw Bop</button>
             <button data-key="KeyL">Yarn Toss</button>
+            <button data-key="KeyJ">Hind Legs</button>
           </div>
         </div>
       </section>
 
       <footer>
-        <button id="resetButton">Start New Round</button>
+        <button id="resetButton" class="hidden">Start New Round</button>
       </footer>
     </main>
 
