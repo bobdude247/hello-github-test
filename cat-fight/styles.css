@@ -139,7 +139,7 @@ body {
 
 .cat-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(110px, 1fr));
+  grid-template-columns: repeat(5, minmax(96px, 1fr));
   gap: 6px;
 }
 
