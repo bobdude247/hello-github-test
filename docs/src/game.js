@@ -46,7 +46,9 @@ const catRoster = [
   { name: "Snowball Puff", color: "#f8f8ff", image: "./assets/cats/snowball-puff.svg" },
   { name: "Cocoa Stripe", color: "#8b5a3c", image: "./assets/cats/cocoa-stripe.svg" },
   { name: "Lilac Whiskers", color: "#b09edb", image: "./assets/cats/lilac-whiskers.svg" },
-  { name: "Minty Paws", color: "#8fd3bf", image: "./assets/cats/minty-paws.svg" }
+  { name: "Minty Paws", color: "#8fd3bf", image: "./assets/cats/minty-paws.svg" },
+  { name: "Lilith Black Longhair", color: "#2a2b33", image: "./assets/cats/lilith-black-longhair.svg" },
+  { name: "Muffin White Tabby", color: "#f5f8ff", image: "./assets/cats/muffin-white-tabby.svg" }
 ];
 
 let p1Pick = null;

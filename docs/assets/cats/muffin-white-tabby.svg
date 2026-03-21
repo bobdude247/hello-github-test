@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="Muffin White Tabby">
+  <rect width="96" height="96" rx="14" fill="#f5f8ff"/>
+  <circle cx="48" cy="52" r="28" fill="#fffdfc" stroke="#d7dde8" stroke-width="2"/>
+  <path d="M30 32l8-14 8 16" fill="#fffdfc" stroke="#d7dde8" stroke-width="2"/>
+  <path d="M66 32l-8-14-8 16" fill="#fffdfc" stroke="#d7dde8" stroke-width="2"/>
+
+  <path d="M36 38c3 3 6 3 9 0M44 36c3 2 5 2 8 0M50 39c3 3 6 3 9 0" stroke="#c8ced9" stroke-width="2" stroke-linecap="round" fill="none"/>
+  <path d="M36 68c3-3 6-3 9 0M44 70c3-2 5-2 8 0M50 67c3-3 6-3 9 0" stroke="#c8ced9" stroke-width="2" stroke-linecap="round" fill="none"/>
+
+  <circle cx="38" cy="52" r="3" fill="#222"/>
+  <circle cx="58" cy="52" r="3" fill="#222"/>
+  <circle cx="48" cy="60" r="3" fill="#ff89ad"/>
+  <path d="M24 49h12M60 49h12" stroke="#c0c8d5" stroke-width="3" stroke-linecap="round"/>
+</svg>
