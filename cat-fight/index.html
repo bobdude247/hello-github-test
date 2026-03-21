@@ -40,6 +40,18 @@
           </label>
         </div>
 
+        <div class="match-length" role="group" aria-label="Game Mode">
+          <span>Mode:</span>
+          <label>
+            <input type="radio" name="gameMode" value="1p" checked />
+            1 Player (vs CPU)
+          </label>
+          <label>
+            <input type="radio" name="gameMode" value="2p" />
+            2 Players
+          </label>
+        </div>
+
         <div class="select-single-box">
           <p id="pickOrder" class="pick-order">Pick order: Player 1 turn</p>
           <p id="p1Selected" class="selected-name">Player 1: Not selected</p>
@@ -54,7 +66,7 @@
       </section>
 
       <section id="controls" class="controls hidden">
-        <div class="controls-col">
+        <div id="p1ControlsCol" class="controls-col">
           <h2>Player 1 Controls</h2>
           <p>Keyboard: A/D move, W jump, F paw bop, G yarn toss, H hind legs, hold away to block</p>
           <div class="touch-grid">
@@ -67,7 +79,7 @@
           </div>
         </div>
 
-        <div class="controls-col">
+        <div id="p2ControlsCol" class="controls-col">
           <h2>Player 2 Controls</h2>
           <p>Keyboard: ←/→ move, ↑ jump, K paw bop, L yarn toss, J hind legs, hold away to block</p>
           <div class="touch-grid">

@@ -16,6 +16,9 @@ const p1SelectedEl = document.getElementById("p1Selected");
 const p2SelectedEl = document.getElementById("p2Selected");
 const catGridEl = document.getElementById("catGrid");
 const matchLengthEls = [...document.querySelectorAll('input[name="matchLength"]')];
+const gameModeEls = [...document.querySelectorAll('input[name="gameMode"]')];
+const p1ControlsCol = document.getElementById("p1ControlsCol");
+const p2ControlsCol = document.getElementById("p2ControlsCol");
 
 const FLOOR_Y = 440;
 const GRAVITY = 0.75;
@@ -53,6 +56,7 @@ const catRoster = [
 
 let p1Pick = null;
 let p2Pick = null;
+let gameMode = "1p";
 
 let maxRounds = 1;
 let roundsToWin = 1;
@@ -378,13 +382,30 @@ function selectedMatchLength() {
   return selected ? Number(selected.value) : 1;
 }
 
+function selectedGameMode() {
+  const selected = gameModeEls.find((el) => el.checked);
+  return selected ? selected.value : "1p";
+}
+
+function isSinglePlayer() {
+  return gameMode === "1p";
+}
+
 function updateMatchStatus(text) {
   matchStatusEl.textContent = text;
 }
 
 function updatePickOrderLabel() {
   if (!p1Pick) {
-    pickOrderEl.textContent = "Pick order: Player 1 turn";
+    pickOrderEl.textContent = isSinglePlayer()
+      ? "Pick order: CPU cat first (Player 1)"
+      : "Pick order: Player 1 turn";
+    return;
+  }
+  if (isSinglePlayer()) {
+    pickOrderEl.textContent = !p2Pick
+      ? "Pick order: Your cat next (Player 2 - Arrow keys)"
+      : "Pick order: Locked in";
     return;
   }
   if (!p2Pick) {
@@ -392,6 +413,35 @@ function updatePickOrderLabel() {
     return;
   }
   pickOrderEl.textContent = "Pick order: Locked in";
+}
+
+function clearControlKeys(cat) {
+  const controlValues = Object.values(cat.controls);
+  controlValues.forEach((code) => keys.delete(code));
+}
+
+function updateModeUi() {
+  if (p1ControlsCol) {
+    p1ControlsCol.classList.toggle("hidden", isSinglePlayer());
+  }
+
+  if (p2ControlsCol) {
+    p2ControlsCol.classList.remove("hidden");
+  }
+
+  if (!p1Pick) {
+    p1SelectedEl.textContent = isSinglePlayer()
+      ? "Player 1 (CPU): Not selected"
+      : "Player 1: Not selected";
+  }
+
+  if (!p2Pick) {
+    p2SelectedEl.textContent = isSinglePlayer()
+      ? "Player 2 (You): Not selected"
+      : "Player 2: Not selected";
+  }
+
+  updatePickOrderLabel();
 }
 
 function updateRoundButton() {
@@ -416,6 +466,12 @@ function showFightScreen() {
   selectScreenEl.classList.add("hidden");
   fightScreenEl.classList.remove("hidden");
   controlsEl.classList.remove("hidden");
+  if (p1ControlsCol) {
+    p1ControlsCol.classList.toggle("hidden", isSinglePlayer());
+  }
+  if (p2ControlsCol) {
+    p2ControlsCol.classList.remove("hidden");
+  }
 }
 
 function renderCatOptions() {
@@ -442,10 +498,14 @@ function renderCatOptions() {
     btn.addEventListener("click", () => {
       if (!p1Pick) {
         p1Pick = cat;
-        p1SelectedEl.textContent = `Player 1: ${cat.name}`;
+        p1SelectedEl.textContent = isSinglePlayer()
+          ? `Player 1 (CPU): ${cat.name}`
+          : `Player 1: ${cat.name}`;
       } else if (!p2Pick) {
         p2Pick = cat;
-        p2SelectedEl.textContent = `Player 2: ${cat.name}`;
+        p2SelectedEl.textContent = isSinglePlayer()
+          ? `Player 2 (You): ${cat.name}`
+          : `Player 2: ${cat.name}`;
       }
       updatePickOrderLabel();
       renderCatOptions();
@@ -467,13 +527,25 @@ async function startCountdown() {
 }
 
 function maybeStartFromSelection() {
-  if (!p1Pick || !p2Pick) {
-    const waitText = p1Pick || p2Pick ? "Waiting for second pick..." : "Select cats to begin";
+  gameMode = selectedGameMode();
+
+  if (!p1Pick) {
+    updateMatchStatus("Match: Select cats to begin");
+    return;
+  }
+
+  if (!p2Pick) {
+    const waitText = isSinglePlayer()
+      ? "Waiting for your Player 2 pick..."
+      : "Waiting for second pick...";
     updateMatchStatus(`Match: ${waitText}`);
     return;
   }
 
   matchLengthEls.forEach((el) => {
+    el.disabled = true;
+  });
+  gameModeEls.forEach((el) => {
     el.disabled = true;
   });
 
@@ -482,8 +554,11 @@ function maybeStartFromSelection() {
   p1RoundsWon = 0;
   p2RoundsWon = 0;
 
+  const p1MatchName = isSinglePlayer() ? `CPU (${p1Pick.name})` : p1Pick.name;
+  const p2MatchName = isSinglePlayer() ? `You (${p2Pick.name})` : p2Pick.name;
+
   updateMatchStatus(
-    `Match: ${p1Pick.name} vs ${p2Pick.name} — First to ${roundsToWin} round${roundsToWin > 1 ? "s" : ""}`
+    `Match: ${p1MatchName} vs ${p2MatchName} — First to ${roundsToWin} round${roundsToWin > 1 ? "s" : ""}`
   );
 
   showFightScreen();
@@ -507,8 +582,10 @@ function evaluateRoundResult() {
   if (roundWinner === 2) p2RoundsWon++;
 
   matchEnded = p1RoundsWon >= roundsToWin || p2RoundsWon >= roundsToWin;
+  const p1StatusName = isSinglePlayer() ? `CPU ${player1.name}` : player1.name;
+  const p2StatusName = isSinglePlayer() ? `You ${player2.name}` : player2.name;
   updateMatchStatus(
-    `Match: ${player1.name} ${p1RoundsWon} - ${p2RoundsWon} ${player2.name}${matchEnded ? " (match complete)" : ""}`
+    `Match: ${p1StatusName} ${p1RoundsWon} - ${p2RoundsWon} ${p2StatusName}${matchEnded ? " (match complete)" : ""}`
   );
   updateRoundButton();
 }
@@ -521,16 +598,50 @@ function resetToSelection() {
   matchLengthEls.forEach((el) => {
     el.disabled = false;
   });
+  gameModeEls.forEach((el) => {
+    el.disabled = false;
+  });
+  gameMode = selectedGameMode();
   updateMatchStatus("Match: Select cats to begin");
   showSelectScreen();
   resetRound(false);
+  updateModeUi();
   renderCatOptions();
 }
 
 function updateHud() {
-  p1StaminaEl.textContent = `P1 Stamina: ${player1.stamina}`;
-  p2StaminaEl.textContent = `P2 Stamina: ${player2.stamina}`;
+  p1StaminaEl.textContent = `${isSinglePlayer() ? "CPU" : "P1"} Stamina: ${player1.stamina}`;
+  p2StaminaEl.textContent = `${isSinglePlayer() ? "You" : "P2"} Stamina: ${player2.stamina}`;
   timerEl.textContent = `Time: ${timeLeft}`;
+}
+
+function updateAiInput(ai, enemy) {
+  clearControlKeys(ai);
+
+  const horizontalGap = enemy.x - ai.x;
+  const absGap = Math.abs(horizontalGap);
+
+  if (absGap > 72) {
+    keys.add(horizontalGap > 0 ? ai.controls.right : ai.controls.left);
+  } else if (Math.random() < 0.35) {
+    keys.add(horizontalGap > 0 ? ai.controls.left : ai.controls.right);
+  }
+
+  if (ai.y >= FLOOR_Y && Math.random() < 0.012) {
+    keys.add(ai.controls.jump);
+  }
+
+  if (absGap < 95 && Math.random() < 0.11) {
+    keys.add(ai.controls.attack);
+  }
+
+  if (absGap < 70 && Math.random() < 0.05) {
+    keys.add(ai.controls.hind);
+  }
+
+  if (absGap >= 85 && Math.random() < 0.06) {
+    keys.add(ai.controls.ranged);
+  }
 }
 
 function drawCat(cat) {
@@ -619,7 +730,12 @@ function loop() {
   drawArena();
 
   if (!roundOver && roundStarted) {
+    if (isSinglePlayer()) {
+      updateAiInput(player1, player2);
+    }
+
     handleInput(player1, player2);
+
     handleInput(player2, player1);
 
     updateCat(player1);
@@ -657,6 +773,11 @@ function loop() {
 }
 
 window.addEventListener("keydown", (e) => {
+  if (isSinglePlayer() && Object.values(player1.controls).includes(e.code)) {
+    e.preventDefault();
+    return;
+  }
+
   keys.add(e.code);
   if (["ArrowUp", "ArrowLeft", "ArrowRight", "Space"].includes(e.code)) {
     e.preventDefault();
@@ -706,6 +827,18 @@ matchLengthEls.forEach((el) => {
   });
 });
 
+gameModeEls.forEach((el) => {
+  el.addEventListener("change", () => {
+    if (p1Pick || p2Pick) return;
+
+    gameMode = selectedGameMode();
+    updateModeUi();
+    const modeText = isSinglePlayer() ? "1 Player vs CPU" : "2 Players";
+    updateMatchStatus(`Match: ${modeText} selected`);
+    renderCatOptions();
+  });
+});
+
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     const isLocalhost =
@@ -729,9 +862,11 @@ if ("serviceWorker" in navigator) {
 }
 
 showSelectScreen();
+gameMode = selectedGameMode();
+updateModeUi();
 renderCatOptions();
 resetRound(false);
 p1SelectedEl.textContent = "Player 1: Not selected";
-p2SelectedEl.textContent = "Player 2: Not selected";
+updateModeUi();
 updateMatchStatus("Match: Select cats to begin");
 loop();
