@@ -42,6 +42,7 @@ The Windows `python` command is used because `python3` may resolve to the Micros
 - Player 2: Arrow keys move/jump, `K` paw bop, `L` yarn toss, `J` hind legs.
 - Signature move: Player 1 presses `V`; Player 2 presses `U`. Touch players use the Signature Move button.
 - Hold away from an incoming attack to block.
+- In one-player mode, choose CPU Difficulty: Easy pauses and misses more, Normal is balanced, and Hard reacts, spaces, blocks, and pressures more often. The choice is saved in the browser.
 - Use the visible Sound toggle to mute or restore synthesized effects. The preference is saved in the browser.
 
 ## Cats and signatures
@@ -64,6 +65,8 @@ Cooldown status appears beside each stamina meter and communicates readiness or 
 ## Attract mode
 
 The setup screen includes a CPU-vs-CPU attract demo setting. It is **After 60 seconds** by default, with Off, 30-second, and 2-minute options. The setting is saved in the browser under `catFightAttractMode`. The timer resets when setup receives keyboard, pointer, touch, or selection activity, and it never starts while the tab is hidden. Any deliberate input exits a demo and restores the previous setup selections.
+
+Normal matches use slightly more deliberate movement, attack recovery, and projectile pacing. Exhibition matches use a separate slower combat profile for easier viewing; the displayed round clock remains accurate and the profile does not carry into the next player match.
 
 ## Service worker development
 

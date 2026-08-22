@@ -58,6 +58,16 @@
           </label>
         </div>
 
+        <label class="difficulty-setting" for="difficulty">
+          <span>CPU Difficulty</span>
+          <select id="difficulty" aria-describedby="difficultyHelp">
+            <option value="easy">Easy</option>
+            <option value="normal" selected>Normal</option>
+            <option value="hard">Hard</option>
+          </select>
+          <small id="difficultyHelp">Easy pauses more and misses more; Hard reacts and defends more often.</small>
+        </label>
+
         <label class="attract-setting" for="attractMode">
           <span>CPU-vs-CPU attract demo</span>
           <select id="attractMode" aria-describedby="attractHelp">

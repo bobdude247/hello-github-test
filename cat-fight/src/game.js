@@ -25,6 +25,7 @@ const matchLengthEls = [...document.querySelectorAll('input[name="matchLength"]'
 const gameModeEls = [...document.querySelectorAll('input[name="gameMode"]')];
 const p1ControlsCol = document.getElementById("p1ControlsCol");
 const p2ControlsCol = document.getElementById("p2ControlsCol");
+const difficultyEl = document.getElementById("difficulty");
 
 const FLOOR_Y = 440;
 const GRAVITY = 0.75;
@@ -37,6 +38,17 @@ const PROJECTILE_PUSH_FORCE = 4;
 const HIND_PUSH_FORCE = 9;
 const BLOCK_KNOCKBACK_SCALE = 0.5;
 const CLOSE_BLOCK_DISTANCE = 140;
+const YARN_SIZE = 18;
+
+const BALANCE = Object.freeze({
+  normal: Object.freeze({ moveSpeed: 3.6, projectileSpeed: 5.5, pawCooldown: 32, hindCooldown: 47, rangedCooldown: 55, attackDecisionScale: 0.9, signatureDecisionScale: 0.9 }),
+  exhibition: Object.freeze({ moveSpeed: 3.15, projectileSpeed: 5, pawCooldown: 36, hindCooldown: 52, rangedCooldown: 60, attackDecisionScale: 0.68, signatureDecisionScale: 0.7 }),
+  difficulty: Object.freeze({
+    easy: Object.freeze({ reaction: 0.72, spacing: 1.25, blockChance: 0.12, aggression: 0.68, signatureChance: 0.006, pauseChance: 0.025 }),
+    normal: Object.freeze({ reaction: 1, spacing: 1, blockChance: 0.25, aggression: 1, signatureChance: 0.012, pauseChance: 0.008 }),
+    hard: Object.freeze({ reaction: 1.2, spacing: 0.82, blockChance: 0.42, aggression: 1.18, signatureChance: 0.02, pauseChance: 0.003 })
+  })
+});
 
 const keys = new Set();
 const projectiles = [];
@@ -58,10 +70,19 @@ let exhibitionReturnTimer = null;
 let attractIdleMs = 0;
 let lastAttractFrame = null;
 let attractModeSeconds = Number(localStorage.getItem("catFightAttractMode") || 60);
+let difficulty = localStorage.getItem("catFightDifficulty") || "normal";
 let setupSnapshot = null;
 let exhibitionIndex = 0;
 let visualEffects = [];
 let lastPointerPosition = "";
+
+function pacingProfile() {
+  return isExhibition ? BALANCE.exhibition : BALANCE.normal;
+}
+
+function difficultyProfile() {
+  return isExhibition ? BALANCE.difficulty.normal : BALANCE.difficulty[difficulty];
+}
 
 const prefersReducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
 let audioContext = null;
@@ -171,7 +192,7 @@ function makeCat({ name, color, x, controls, facing, signature = null, isCpu = f
     h: 80,
     vx: 0,
     vy: 0,
-    speed: 4,
+    speed: pacingProfile().moveSpeed,
     jumpPower: 14,
     facing,
     stamina: 100,
@@ -386,8 +407,8 @@ function startAttack(cat, type) {
   if (cat.attackAnimation || (type === "paw" ? cat.attackCooldown : cat.hindCooldown) > 0) return;
   const duration = type === "hind" ? (prefersReducedMotion ? 13 : 24) : (prefersReducedMotion ? 9 : 16);
   cat.attackAnimation = { type, frame: 0, duration, impact: Math.floor(duration * 0.55), resolved: false };
-  if (type === "hind") cat.hindCooldown = 42;
-  else cat.attackCooldown = 28;
+  if (type === "hind") cat.hindCooldown = pacingProfile().hindCooldown;
+  else cat.attackCooldown = pacingProfile().pawCooldown;
 }
 
 function resolveStandardAttack(cat, enemy, animation) {
@@ -474,13 +495,13 @@ function handleInput(cat, enemy) {
   if (keys.has(cat.controls.attack)) startAttack(cat, "paw");
 
   if (keys.has(cat.controls.ranged) && cat.rangedCooldown === 0) {
-    cat.rangedCooldown = 50;
+    cat.rangedCooldown = pacingProfile().rangedCooldown;
     projectiles.push({
       owner: cat,
-      x: cat.facing === 1 ? cat.x + cat.w + 4 : cat.x - 16,
+      x: cat.facing === 1 ? cat.x + cat.w + 4 : cat.x - YARN_SIZE - 2,
       y: cat.y + 26,
-      vx: cat.facing * 6,
-      size: 14
+      vx: cat.facing * pacingProfile().projectileSpeed,
+      size: YARN_SIZE,
     });
     addPopup("YARN!", cat.x + cat.w / 2, cat.y);
   }
@@ -587,13 +608,13 @@ function resolveSignature(cat, enemy) {
       addBurst(cat.x + cat.w / 2, cat.y + 32, "#ff9bba", true);
       break;
     case "snowballRoll":
-      projectiles.push({ owner: cat, x: cat.facing === 1 ? cat.x + cat.w + 4 : cat.x - 22, y: cat.y + 28, vx: cat.facing * 5.5, size: 22, kind: "snowball", spin: 0 });
+      projectiles.push({ owner: cat, x: cat.facing === 1 ? cat.x + cat.w + 4 : cat.x - 22, y: cat.y + 28, vx: cat.facing * pacingProfile().projectileSpeed, size: 22, kind: "snowball", spin: 0 });
       break;
     case "cocoaClobber":
       if (close) signatureHit(cat, enemy, move.damage, 13, "COCOA CLOBBER!", true);
       break;
     case "whiskerWave":
-      projectiles.push({ owner: cat, x: cat.facing === 1 ? cat.x + cat.w + 4 : cat.x - 24, y: cat.y + 25, vx: cat.facing * 7, size: 20, kind: "wave", spin: 0 });
+      projectiles.push({ owner: cat, x: cat.facing === 1 ? cat.x + cat.w + 4 : cat.x - 24, y: cat.y + 25, vx: cat.facing * (pacingProfile().projectileSpeed + 1), size: 20, kind: "wave", spin: 0 });
       break;
     case "muffinBounce":
       cat.vy = -cat.jumpPower * 0.9;
@@ -784,6 +805,7 @@ function clearAllInput() {
 }
 
 function updateModeUi() {
+  difficultyEl.disabled = gameMode === "2p" || isExhibition;
   if (p1ControlsCol) {
     p1ControlsCol.classList.toggle("hidden", isSinglePlayer());
   }
@@ -1045,34 +1067,42 @@ function updateAiInput(ai, enemy) {
 
   const horizontalGap = enemy.x - ai.x;
   const absGap = Math.abs(horizontalGap);
+  const profile = difficultyProfile();
+  const pacing = pacingProfile();
 
-  if (absGap > 72) {
+  if (Math.random() < profile.pauseChance * (isExhibition ? 1.4 : 1)) return;
+
+  if (absGap > 72 * profile.spacing && Math.random() < profile.reaction) {
     keys.add(horizontalGap > 0 ? ai.controls.right : ai.controls.left);
-  } else if (Math.random() < 0.35) {
+  } else if (Math.random() < 0.35 * profile.reaction) {
     keys.add(horizontalGap > 0 ? ai.controls.left : ai.controls.right);
   }
 
-  if (ai.y >= FLOOR_Y && Math.random() < 0.012) {
+  if (ai.y >= FLOOR_Y && Math.random() < 0.012 * profile.reaction) {
     keys.add(ai.controls.jump);
   }
 
-  if (absGap < 95 && Math.random() < 0.11) {
+  if (absGap < 95 && Math.random() < 0.11 * profile.aggression * profile.reaction * pacing.attackDecisionScale) {
     keys.add(ai.controls.attack);
   }
 
-  if (absGap < 70 && Math.random() < 0.05) {
+  if (absGap < 70 && Math.random() < 0.05 * profile.aggression * profile.reaction * pacing.attackDecisionScale) {
     keys.add(ai.controls.hind);
   }
 
-  if (absGap >= 85 && Math.random() < 0.06) {
+  if (absGap >= 85 && Math.random() < 0.06 * profile.aggression * profile.reaction * pacing.attackDecisionScale) {
     keys.add(ai.controls.ranged);
+  }
+
+  if (absGap <= CLOSE_BLOCK_DISTANCE && isEnemyStriking(enemy) && Math.random() < profile.blockChance * profile.reaction) {
+    keys.add(horizontalGap > 0 ? ai.controls.left : ai.controls.right);
   }
 
   if (ai.signature && ai.signatureCooldownMs === 0) {
     const useful = absGap <= ai.signature.range ||
       ["snowballRoll", "whiskerWave", "longhairLasso"].includes(ai.signature.id) ||
       (ai.signature.id === "mistyVeil" && (isEnemyStriking(enemy) || ai.stamina < 55));
-    if (useful && Math.random() < (isExhibition ? 0.025 : 0.012)) keys.add(ai.controls.signature);
+    if (useful && Math.random() < profile.signatureChance * pacing.signatureDecisionScale) keys.add(ai.controls.signature);
   }
 }
 
@@ -1089,14 +1119,20 @@ function drawAttackLimb(cat) {
   const reach = (animation.type === "hind" ? 45 : 54) * extension;
   const startX = animation.type === "hind" ? 27 : 40;
   const startY = animation.type === "hind" ? 57 : 48;
-  ctx.strokeStyle = animation.type === "hind" ? "#8c5b46" : cat.color;
+  ctx.strokeStyle = "#4d3b52";
   ctx.lineWidth = animation.type === "hind" ? 12 : 10;
   ctx.lineCap = "round";
   ctx.beginPath();
   ctx.moveTo(startX, startY);
   ctx.lineTo(startX + direction * reach, startY + (animation.type === "hind" ? 3 : -5));
   ctx.stroke();
-  ctx.fillStyle = animation.type === "hind" ? "#f2bd9d" : "#fff3f8";
+  ctx.strokeStyle = cat.color;
+  ctx.lineWidth = animation.type === "hind" ? 8 : 6;
+  ctx.beginPath();
+  ctx.moveTo(startX, startY);
+  ctx.lineTo(startX + direction * reach, startY + (animation.type === "hind" ? 3 : -5));
+  ctx.stroke();
+  ctx.fillStyle = cat.color;
   ctx.beginPath();
   ctx.arc(startX + direction * reach, startY + (animation.type === "hind" ? 3 : -5), animation.type === "hind" ? 8 : 7, 0, Math.PI * 2);
   ctx.fill();
@@ -1213,7 +1249,7 @@ function drawProjectiles() {
       ctx.arc(0, 0, center - 3 - strand * 2, strand * 0.8, Math.PI * 1.6 + strand * 0.7);
       ctx.stroke();
     }
-    ctx.beginPath(); ctx.moveTo(center - 2, center - 1); ctx.quadraticCurveTo(center + 12, center + 8, center + 6, center + 17); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(center - 2, center - 1); ctx.quadraticCurveTo(center + 9, center + 6, center + 5, center + 12); ctx.stroke();
     ctx.fillStyle = "#ffffffaa"; ctx.beginPath(); ctx.arc(-center * 0.3, -center * 0.35, 3, 0, Math.PI * 2); ctx.fill();
     ctx.restore();
   }
@@ -1412,6 +1448,15 @@ gameModeEls.forEach((el) => {
     updateMatchStatus(`Match: ${modeText} selected`);
     renderCatOptions();
   });
+});
+
+difficulty = Object.hasOwn(BALANCE.difficulty, difficulty) ? difficulty : "normal";
+difficultyEl.value = difficulty;
+difficultyEl.addEventListener("change", () => {
+  difficulty = difficultyEl.value;
+  localStorage.setItem("catFightDifficulty", difficulty);
+  resetAttractIdle();
+  announce(`CPU difficulty: ${difficulty}.`, 45);
 });
 
 attractModeSeconds = [0, 30, 60, 120].includes(attractModeSeconds) ? attractModeSeconds : 60;
