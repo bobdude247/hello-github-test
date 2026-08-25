@@ -13,6 +13,7 @@ const gameWrapEl = document.getElementById("fightScreen");
 const p1SignatureCooldownEl = document.getElementById("p1SignatureCooldown");
 const p2SignatureCooldownEl = document.getElementById("p2SignatureCooldown");
 const attractModeEl = document.getElementById("attractMode");
+const roundScoreEl = document.getElementById("roundScore");
 
 const selectScreenEl = document.getElementById("selectScreen");
 const fightScreenEl = document.getElementById("fightScreen");
@@ -39,6 +40,8 @@ const HIND_PUSH_FORCE = 9;
 const BLOCK_KNOCKBACK_SCALE = 0.5;
 const CLOSE_BLOCK_DISTANCE = 140;
 const YARN_SIZE = 18;
+const EXHIBITION_ROUNDS = 3;
+const EXHIBITION_TRANSITION_MS = 1800;
 
 const BALANCE = Object.freeze({
   normal: Object.freeze({ moveSpeed: 3.6, projectileSpeed: 5.5, pawCooldown: 32, hindCooldown: 47, rangedCooldown: 55, attackDecisionScale: 0.9, signatureDecisionScale: 0.9 }),
@@ -63,10 +66,13 @@ let matchEnded = false;
 let roundDraw = false;
 let hitStopMs = 0;
 let countdownToken = 0;
+let countdownTimer = null;
 let liveStatusTimeout;
 let isExhibition = false;
 let exhibitionToken = 0;
 let exhibitionReturnTimer = null;
+let exhibitionTransitionTimer = null;
+let exhibitionCompletedRounds = 0;
 let attractIdleMs = 0;
 let lastAttractFrame = null;
 let attractModeSeconds = Number(localStorage.getItem("catFightAttractMode") || 60);
@@ -277,10 +283,7 @@ function resetRound(startImmediately = true) {
   roundElapsedMs = 0;
   lastFrameTime = null;
   hitStopMs = 0;
-  if (exhibitionReturnTimer) {
-    window.clearTimeout(exhibitionReturnTimer);
-    exhibitionReturnTimer = null;
-  }
+  clearExhibitionTimers();
   gameWrapEl.classList.remove("shake-light", "shake-strong");
   p1StaminaEl.classList.remove("damage-flash");
   p2StaminaEl.classList.remove("damage-flash");
@@ -698,6 +701,15 @@ function resetAttractIdle() {
   lastAttractFrame = null;
 }
 
+function clearExhibitionTimers() {
+  if (exhibitionReturnTimer) window.clearTimeout(exhibitionReturnTimer);
+  if (exhibitionTransitionTimer) window.clearTimeout(exhibitionTransitionTimer);
+  if (countdownTimer) window.clearTimeout(countdownTimer);
+  exhibitionReturnTimer = null;
+  exhibitionTransitionTimer = null;
+  countdownTimer = null;
+}
+
 function updateAttractMode(timestamp) {
   if (isExhibition || attractModeSeconds <= 0 || document.hidden || selectScreenEl.classList.contains("hidden")) {
     lastAttractFrame = null;
@@ -718,7 +730,9 @@ function startExhibition() {
     p1Pick,
     p2Pick,
     gameMode,
-    matchLength: selectedMatchLength()
+    matchLength: selectedMatchLength(),
+    difficulty,
+    attractModeSeconds
   };
   const first = exhibitionIndex % catRoster.length;
   const second = (first + 3 + (exhibitionIndex % 4)) % catRoster.length;
@@ -728,47 +742,79 @@ function startExhibition() {
   p1Pick = catRoster[first];
   p2Pick = catRoster[second];
   gameMode = "exhibition";
-  maxRounds = 1;
-  roundsToWin = 1;
+  maxRounds = EXHIBITION_ROUNDS;
+  roundsToWin = 2;
   p1RoundsWon = 0;
   p2RoundsWon = 0;
+  exhibitionCompletedRounds = 0;
   updateMatchStatus(`CPU Exhibition: ${p1Pick.name} vs ${p2Pick.name}`);
   showFightScreen();
-  resetRound(false);
-  gameMode = "exhibition";
-  updateMatchStatus(`CPU Exhibition: ${p1Pick.name} vs ${p2Pick.name}`);
-  roundStarted = false;
   resetAttractIdle();
-  void startCountdown().then((canStart) => {
-    if (!canStart || !isExhibition) return;
-    roundStarted = true;
-    announce("CPU EXHIBITION! FIGHT! 🐾", 90);
-  });
+  beginExhibitionRound();
 }
 
 function exitExhibition() {
   if (!isExhibition) return;
   exhibitionToken++;
   countdownToken++;
-  if (exhibitionReturnTimer) window.clearTimeout(exhibitionReturnTimer);
-  exhibitionReturnTimer = null;
+  clearExhibitionTimers();
   isExhibition = false;
   clearAllInput();
   if (setupSnapshot) {
     p1Pick = setupSnapshot.p1Pick;
     p2Pick = setupSnapshot.p2Pick;
     gameMode = setupSnapshot.gameMode;
+    difficulty = setupSnapshot.difficulty;
+    attractModeSeconds = setupSnapshot.attractModeSeconds;
     matchLengthEls.forEach((el) => { el.checked = Number(el.value) === setupSnapshot.matchLength; el.disabled = false; });
+    difficultyEl.value = difficulty;
+    attractModeEl.value = String(attractModeSeconds);
+    maxRounds = setupSnapshot.matchLength;
+    roundsToWin = Math.floor(maxRounds / 2) + 1;
   }
   gameModeEls.forEach((el) => { el.checked = el.value === gameMode; el.disabled = false; });
   setupSnapshot = null;
+  exhibitionCompletedRounds = 0;
+  p1RoundsWon = 0;
+  p2RoundsWon = 0;
   showSelectScreen();
   resetRound(false);
   updateModeUi();
   renderCatOptions();
+  p1SelectedEl.textContent = p1Pick
+    ? `${isSinglePlayer() ? "Player 1 (CPU)" : "Player 1"}: ${p1Pick.name}`
+    : "Player 1: Not selected";
+  p2SelectedEl.textContent = p2Pick
+    ? `${isSinglePlayer() ? "Player 2 (You)" : "Player 2"}: ${p2Pick.name}`
+    : "Player 2: Not selected";
   updateMatchStatus("Match: Select cats to begin");
   resetAttractIdle();
   announce("Exhibition ended. Your setup is restored.", 70);
+}
+
+function beginExhibitionRound() {
+  if (!isExhibition) return;
+  clearExhibitionTimers();
+  const roundNumber = exhibitionCompletedRounds + 1;
+  resetRound(false);
+  roundStarted = false;
+  const roundLabel = roundNumber === EXHIBITION_ROUNDS ? "Final Round" : `Round ${roundNumber} of ${EXHIBITION_ROUNDS}`;
+  updateMatchStatus(`CPU Exhibition: ${roundLabel} — ${p1Pick.name} ${p1RoundsWon} - ${p2RoundsWon} ${p2Pick.name}`);
+  announce(`${roundLabel} — ${p1RoundsWon}-${p2RoundsWon}`, 99999);
+  const token = exhibitionToken;
+  void startCountdown().then((canStart) => {
+    if (!canStart || !isExhibition || exhibitionToken !== token) return;
+    roundStarted = true;
+    announce(`${roundLabel}! FIGHT! 🐾`, 90);
+  });
+}
+
+function scheduleExhibitionRound() {
+  const token = exhibitionToken;
+  exhibitionTransitionTimer = window.setTimeout(() => {
+    exhibitionTransitionTimer = null;
+    if (isExhibition && exhibitionToken === token) beginExhibitionRound();
+  }, EXHIBITION_TRANSITION_MS);
 }
 
 function updateMatchStatus(text) {
@@ -928,7 +974,10 @@ async function startCountdown() {
     announce(beat, 55);
     playSound(beat === "Play!" ? "fight" : "tick");
     await new Promise((resolve) => {
-      window.setTimeout(resolve, 650);
+      countdownTimer = window.setTimeout(() => {
+        countdownTimer = null;
+        resolve();
+      }, 650);
     });
   }
   return token === countdownToken;
@@ -987,17 +1036,41 @@ function evaluateRoundResult() {
   else if (player1.stamina > player2.stamina) roundWinner = 1;
   else if (player2.stamina > player1.stamina) roundWinner = 2;
 
-  // Draws replay without awarding a point, so best-of-three always progresses.
   roundDraw = roundWinner === 0;
   if (isExhibition) {
+    const roundNumber = exhibitionCompletedRounds + 1;
+    if (roundDraw) {
+      updateMatchStatus(`CPU Exhibition: Round ${roundNumber} of ${EXHIBITION_ROUNDS} draw — replaying; score ${p1RoundsWon}-${p2RoundsWon}`);
+      announce(`Round ${roundNumber} draw — replaying`, 99999);
+      playSound("block");
+      scheduleExhibitionRound();
+      return;
+    }
+
+    if (roundWinner === 1) p1RoundsWon++;
+    if (roundWinner === 2) p2RoundsWon++;
+    exhibitionCompletedRounds++;
+    const score = `${p1RoundsWon}-${p2RoundsWon}`;
+    if (exhibitionCompletedRounds < EXHIBITION_ROUNDS) {
+      updateMatchStatus(`CPU Exhibition: Round ${roundNumber} complete — score ${score}; next round ${exhibitionCompletedRounds + 1} of ${EXHIBITION_ROUNDS}`);
+      announce(`Round ${roundNumber} complete — ${score}`, 99999);
+      playSound("roundWin");
+      scheduleExhibitionRound();
+      return;
+    }
+
     matchEnded = true;
-    updateMatchStatus(`CPU Exhibition complete: ${player1.name} ${player1.stamina} - ${player2.stamina} ${player2.name}`);
-    announce(roundDraw ? "EXHIBITION DRAW" : "EXHIBITION COMPLETE! 🏆", 99999);
-    playSound(roundDraw ? "block" : "roundWin");
+    const exhibitionResult = p1RoundsWon === p2RoundsWon
+      ? "EXHIBITION DRAW"
+      : p1RoundsWon > p2RoundsWon ? `${player1.name} wins the exhibition! 🏆` : `${player2.name} wins the exhibition! 🏆`;
+    updateMatchStatus(`CPU Exhibition complete: ${player1.name} ${score} ${player2.name} — ${p1RoundsWon === p2RoundsWon ? "draw" : "winner decided by round score"}`);
+    announce(exhibitionResult, 99999);
+    playSound(p1RoundsWon === p2RoundsWon ? "block" : "matchWin");
     const token = exhibitionToken;
     exhibitionReturnTimer = window.setTimeout(() => {
+      exhibitionReturnTimer = null;
       if (isExhibition && exhibitionToken === token) exitExhibition();
-    }, 2600);
+    }, 3000);
     return;
   }
   if (roundWinner === 1) p1RoundsWon++;
@@ -1046,6 +1119,9 @@ function updateHud() {
   p1StaminaEl.textContent = `${isSinglePlayer() ? "CPU" : "P1"} Stamina: ${player1.stamina}`;
   p2StaminaEl.textContent = `${isSinglePlayer() ? "You" : "P2"} Stamina: ${player2.stamina}`;
   timerEl.textContent = `Time: ${timeLeft}`;
+  roundScoreEl.textContent = isExhibition
+    ? `Exhibition round wins: ${player1.name} ${p1RoundsWon} - ${p2RoundsWon} ${player2.name}`
+    : `Round score: P1 ${p1RoundsWon} - ${p2RoundsWon} P2`;
   updateSignatureCooldown(player1, p1SignatureCooldownEl, isSinglePlayer() ? "CPU" : "P1");
   updateSignatureCooldown(player2, p2SignatureCooldownEl, isSinglePlayer() ? "You" : "P2");
 }
@@ -1400,6 +1476,13 @@ window.addEventListener("pointerdown", (e) => {
     return;
   }
   resetAttractIdle();
+}, true);
+
+window.addEventListener("click", (e) => {
+  if (isExhibition) {
+    e.preventDefault();
+    exitExhibition();
+  }
 }, true);
 
 window.addEventListener("pointermove", (e) => {
